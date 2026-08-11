@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<title>Cartões PT — Flashcards</title>
+<style>
+:root{--bg:#f4f7f7;--card:#fff;--text:#172121;--muted:#647171;--primary:#0f766e;--primary2:#115e59;--border:#dce5e4;--danger:#b42318}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+button,input,textarea{font:inherit}button{cursor:pointer}
+header{background:var(--primary);color:white;padding:18px max(18px,calc((100% - 900px)/2));display:flex;align-items:center;justify-content:space-between;gap:12px}
+header h1{font-size:20px;margin:0}header small{opacity:.85}
+main{max-width:900px;margin:auto;padding:18px 16px 100px}
+nav{display:flex;gap:8px;overflow:auto;margin-bottom:18px}
+nav button{border:0;background:#e4eceb;color:#24403e;padding:10px 14px;border-radius:999px;white-space:nowrap}
+nav button.active{background:var(--primary);color:white}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:14px}
+.row{display:flex;gap:10px;align-items:center}.between{justify-content:space-between}
+h2{font-size:22px;margin:4px 0 14px}h3{margin:0 0 8px}.muted{color:var(--muted)}
+input,textarea{width:100%;border:1px solid var(--border);border-radius:12px;padding:12px;background:white;color:var(--text);outline:none}
+textarea{min-height:110px;resize:vertical}.field{margin:10px 0}.field label{display:block;font-weight:650;font-size:14px;margin-bottom:6px}
+.btn{border:0;border-radius:12px;padding:11px 15px;background:var(--primary);color:#fff;font-weight:650}
+.btn.secondary{background:#e7eeee;color:#20403d}.btn.danger{background:#fee4e2;color:var(--danger)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.deck{border:1px solid var(--border);border-radius:15px;padding:15px;background:#fff}
+.deck button{width:100%;text-align:left;border:0;background:none;padding:0;color:inherit}
+.badge{font-size:12px;background:#e8f3f1;color:var(--primary2);padding:4px 8px;border-radius:999px}
+.cardwrap{perspective:1000px;max-width:650px;margin:20px auto}
+.flash{min-height:330px;position:relative;transform-style:preserve-3d;transition:transform .45s;cursor:pointer}
+.flash.flipped{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;background:white;border:1px solid var(--border);border-radius:22px;padding:30px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;box-shadow:0 10px 35px rgba(0,0,0,.06)}
+.back{transform:rotateY(180deg)}.face .label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:16px}
+.face .content{font-size:28px;line-height:1.25;white-space:pre-wrap}.back .content{font-size:24px}
+.study-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}.study-actions .btn{min-width:120px}
+.progress{height:9px;background:#e4eceb;border-radius:99px;overflow:hidden;margin:12px 0}.progress i{display:block;height:100%;background:var(--primary);width:0}
+.hidden{display:none!important}
+.empty{text-align:center;padding:35px 15px}.tiny{font-size:12px}
+.list{display:grid;gap:8px}.item{border:1px solid var(--border);border-radius:12px;padding:12px;background:white}
+@media(max-width:600px){main{padding:14px 12px 90px}.panel{padding:14px}.face .content{font-size:24px}.flash{min-height:290px}}
+</style>
+</head>
+<body>
+<header><div><h1>Cartões PT</h1><small>Flashcards em português de Portugal</small></div><span id="countTop"></span></header>
+<main>
+<nav id="tabs">
+<button data-tab="estudar" class="active">Estudar</button><button data-tab="baralhos">Baralhos</button><button data-tab="cartoes">Cartões</button><button data-tab="dados">Dados</button>
+</nav>
+
+<section id="estudar">
+<div class="panel">
+<div class="row between"><div><h2 id="studyTitle">Escolha um baralho</h2><div class="muted" id="studyMeta"></div></div><button class="btn secondary" id="shuffleBtn">Baralhar</button></div>
+<div class="progress"><i id="bar"></i></div>
+<div id="studyArea"></div>
+</div>
+</section>
+
+<section id="baralhos" class="hidden">
+<div class="panel"><h2>Novo baralho</h2>
+<div class="field"><label>Nome</label><input id="deckName" placeholder="Ex.: Vocabulário de viagens"></div>
+<div class="field"><label>Descrição (opcional)</label><input id="deckDesc" placeholder="Ex.: Palavras úteis para Portugal"></div>
+<button class="btn" id="addDeck">Criar baralho</button></div>
+<div class="panel"><h2>Os teus baralhos</h2><div id="deckList" class="grid"></div></div>
+</section>
+
+<section id="cartoes" class="hidden">
+<div class="panel"><h2>Novo cartão</h2>
+<div class="field"><label>Baralho</label><select id="cardDeck" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:12px"></select></div>
+<div class="field"><label>Frente</label><textarea id="front" placeholder="Ex.: Como se diz “breakfast” em português?"></textarea></div>
+<div class="field"><label>Verso</label><textarea id="back" placeholder="Ex.: Pequeno-almoço"></textarea></div>
+<button class="btn" id="addCard">Adicionar cartão</button></div>
+<div class="panel"><div class="row between"><h2>Cartões</h2><input id="search" style="max-width:260px" placeholder="Pesquisar…"></div><div id="cardList" class="list"></div></div>
+</section>
+
+<section id="dados" class="hidden">
+<div class="panel"><h2>Dados</h2><p class="muted">Os teus baralhos ficam guardados neste dispositivo. Podes fazer uma cópia de segurança ou importar os dados noutro dispositivo.</p>
+<div class="row" style="flex-wrap:wrap"><button class="btn" id="exportBtn">Exportar dados</button><button class="btn secondary" id="importBtn">Importar dados</button><input type="file" id="file" accept=".json" class="hidden"></div>
+</div>
+<div class="panel"><h2>Limpar tudo</h2><p class="muted">Apaga todos os baralhos e cartões deste dispositivo.</p><button class="btn danger" id="clearBtn">Apagar tudo</button></div>
+</section>
+</main>
+
+<script>
+const KEY='cartoes-pt-v1';
+let data=JSON.parse(localStorage.getItem(KEY)||'null')||{
+ decks:[{id:crypto.randomUUID(),name:'Português — exemplos',desc:'Cartões de demonstração'}],
+ cards:[
+ {id:crypto.randomUUID(),deck:'',front:'Como se diz “breakfast” em português de Portugal?',back:'Pequeno-almoço',known:0,seen:0},
+ {id:crypto.randomUUID(),deck:'',front:'Como se diz “bus” em português de Portugal?',back:'Autocarro',known:0,seen:0},
+ {id:crypto.randomUUID(),deck:'',front:'Como se diz “cell phone” em português de Portugal?',back:'Telemóvel',known:0,seen:0}
+ ]};
+if(data.cards.every(c=>!c.deck)) data.cards.forEach(c=>c.deck=data.decks[0].id);
+let currentDeck=data.decks[0]?.id||null,currentCards=[],idx=0,flipped=false;
+function save(){localStorage.setItem(KEY,JSON.stringify(data));renderAll()}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function deckName(id){return data.decks.find(d=>d.id===id)?.name||'Sem baralho'}
+function renderAll(){renderDecks();renderSelect();renderCards();renderStudy();document.getElementById('countTop').textContent=data.cards.length+' cartões'}
+function renderDecks(){
+ const el=document.getElementById('deckList'); if(!data.decks.length){el.innerHTML='<div class="empty muted">Ainda não tens baralhos.</div>';return}
+ el.innerHTML=data.decks.map(d=>{let n=data.cards.filter(c=>c.deck===d.id).length;return `<div class="deck"><button onclick="startDeck('${d.id}')"><h3>${esc(d.name)}</h3><p class="muted">${esc(d.desc||'Sem descrição')}</p><span class="badge">${n} cartão${n===1?'':'s'}</span></button><div class="row" style="margin-top:12px"><button class="btn secondary" onclick="renameDeck('${d.id}')">Editar</button><button class="btn danger" onclick="deleteDeck('${d.id}')">Apagar</button></div></div>`}).join('')
+}
+function renderSelect(){document.getElementById('cardDeck').innerHTML=data.decks.map(d=>`<option value="${d.id}">${esc(d.name)}</option>`).join('')}
+function renderCards(){
+ const q=document.getElementById('search').value.toLowerCase();const el=document.getElementById('cardList');
+ const cs=data.cards.filter(c=>(c.front+' '+c.back).toLowerCase().includes(q));
+ el.innerHTML=cs.length?cs.map(c=>`<div class="item"><div class="row between"><strong>${esc(c.front)}</strong><span class="badge">${esc(deckName(c.deck))}</span></div><div class="muted" style="margin-top:6px">${esc(c.back)}</div><div class="row" style="margin-top:8px"><button class="btn secondary" onclick="editCard('${c.id}')">Editar</button><button class="btn danger" onclick="deleteCard('${c.id}')">Apagar</button></div></div>`).join(''):'<div class="empty muted">Nenhum cartão encontrado.</div>'
+}
+function startDeck(id){currentDeck=id;currentCards=data.cards.filter(c=>c.deck===id);idx=0;flipped=false;showTab('estudar');renderStudy()}
+function renderStudy(){
+ const title=document.getElementById('studyTitle'),meta=document.getElementById('studyMeta'),area=document.getElementById('studyArea'),bar=document.getElementById('bar');
+ currentCards=data.cards.filter(c=>c.deck===currentDeck);
+ if(!currentDeck||!currentCards.length){title.textContent='Escolha um baralho';meta.textContent='Cria um baralho e adiciona cartões para começar.';area.innerHTML='<div class="empty"><p>📚</p><p class="muted">Vai a <b>Baralhos</b> ou <b>Cartões</b> para começar.</p></div>';bar.style.width='0%';return}
+ title.textContent=deckName(currentDeck);meta.textContent=`Cartão ${idx+1} de ${currentCards.length}`;
+ bar.style.width=((idx)/currentCards.length*100)+'%';let c=currentCards[idx];
+ area.innerHTML=`<div class="cardwrap"><div class="flash ${flipped?'flipped':''}" onclick="flip()"><div class="face front"><div class="label">Frente · toca para virar</div><div class="content">${esc(c.front)}</div></div><div class="face back"><div class="label">Verso</div><div class="content">${esc(c.back)}</div></div></div></div><div class="study-actions"><button class="btn danger" onclick="rate(false)">Rever</button><button class="btn secondary" onclick="flip()">Virar cartão</button><button class="btn" onclick="rate(true)">Já sei</button></div>`
+}
+function flip(){flipped=!flipped;renderStudy()}
+function rate(known){let c=currentCards[idx];c.seen=(c.seen||0)+1;if(known)c.known=(c.known||0)+1;if(idx<currentCards.length-1)idx++;else idx=0;flipped=false;save()}
+document.getElementById('shuffleBtn').onclick=()=>{currentCards.sort(()=>Math.random()-.5);idx=0;flipped=false;renderStudy()}
+document.getElementById('addDeck').onclick=()=>{let n=document.getElementById('deckName').value.trim();if(!n)return alert('Indica um nome para o baralho.');let d={id:crypto.randomUUID(),name:n,desc:document.getElementById('deckDesc').value.trim()};data.decks.push(d);currentDeck=d.id;document.getElementById('deckName').value='';document.getElementById('deckDesc').value='';save()}
+document.getElementById('addCard').onclick=()=>{let deck=document.getElementById('cardDeck').value,front=document.getElementById('front').value.trim(),back=document.getElementById('back').value.trim();if(!deck||!front||!back)return alert('Preenche o baralho, a frente e o verso.');data.cards.push({id:crypto.randomUUID(),deck,front,back,known:0,seen:0});document.getElementById('front').value='';document.getElementById('back').value='';currentDeck=deck;save()}
+document.getElementById('search').oninput=renderCards;
+function renameDeck(id){let d=data.decks.find(x=>x.id===id),n=prompt('Novo nome:',d.name);if(n&&n.trim()){d.name=n.trim();save()}}
+function deleteDeck(id){if(!confirm('Apagar este baralho e os seus cartões?'))return;data.decks=data.decks.filter(d=>d.id!==id);data.cards=data.cards.filter(c=>c.deck!==id);currentDeck=data.decks[0]?.id||null;save()}
+function editCard(id){let c=data.cards.find(x=>x.id===id);let f=prompt('Frente:',c.front),b=prompt('Verso:',c.back);if(f!==null&&b!==null){c.front=f.trim();c.back=b.trim();save()}}
+function deleteCard(id){if(confirm('Apagar este cartão?')){data.cards=data.cards.filter(c=>c.id!==id);save()}}
+function showTab(tab){document.querySelectorAll('main section').forEach(s=>s.classList.add('hidden'));document.getElementById(tab).classList.remove('hidden');document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab==='estudar')renderStudy()}
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+document.getElementById('exportBtn').onclick=()=>{let blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='cartoes-pt-backup.json';a.click();URL.revokeObjectURL(a.href)}
+document.getElementById('importBtn').onclick=()=>document.getElementById('file').click();
+document.getElementById('file').onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let x=JSON.parse(r.result);if(!x.decks||!x.cards)throw 0;data=x;currentDeck=data.decks[0]?.id||null;save();alert('Dados importados.')}catch{alert('Ficheiro inválido.')}};r.readAsText(f)}
+document.getElementById('clearBtn').onclick=()=>{if(confirm('Tens a certeza? Isto apaga todos os dados deste dispositivo.')){data={decks:[],cards:[]};currentDeck=null;save()}}
+renderAll();
+</script>
+</body>
+</html>
